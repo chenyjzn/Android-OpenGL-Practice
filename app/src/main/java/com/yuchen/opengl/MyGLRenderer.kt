@@ -1,5 +1,6 @@
 package com.yuchen.opengl
 
+import android.content.Context
 import android.opengl.GLES30
 import android.opengl.GLSurfaceView
 import android.os.Build
@@ -7,7 +8,7 @@ import androidx.annotation.RequiresApi
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
-class MyGLRenderer : GLSurfaceView.Renderer {
+class MyGLRenderer(val context: Context) : GLSurfaceView.Renderer {
 
     lateinit var triangle: Triangle
 
@@ -15,7 +16,7 @@ class MyGLRenderer : GLSurfaceView.Renderer {
     override fun onSurfaceCreated(unused: GL10, config: EGLConfig) {
         // Set the background frame color
         GLES30.glClearColor(0.2f, 0.3f, 0.3f, 1.0f)
-        triangle = Triangle()
+        triangle = Triangle(context)
     }
 
     @RequiresApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
