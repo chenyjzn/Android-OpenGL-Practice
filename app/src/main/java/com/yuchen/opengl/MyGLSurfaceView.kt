@@ -14,7 +14,7 @@ class MyGLSurfaceView : GLSurfaceView {
     init {
         // Create an OpenGL ES 3.0 context
         setEGLContextClientVersion(3)
-        renderer = MyGLRenderer()
+        renderer = MyGLRenderer(context)
         // Set the Renderer for drawing on the GLSurfaceView
         setRenderer(renderer)
     }
