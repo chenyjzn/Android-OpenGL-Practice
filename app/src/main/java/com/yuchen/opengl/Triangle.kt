@@ -7,6 +7,7 @@ import android.graphics.Matrix
 import android.opengl.GLES30
 import android.opengl.GLUtils
 import android.os.Build
+import android.renderscript.Matrix4f
 import androidx.annotation.RequiresApi
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -59,8 +60,9 @@ class Triangle(private val context: Context) {
                 "layout (location = 2) in vec2 aTexCoord;\n" +
                 "out vec3 ourColor;\n"+
                 "out vec2 TexCoord;\n"+
+                "uniform mat4 transform;\n"+
                 "void main() {\n" +
-                "     gl_Position = vec4(aPos, 1.0);\n" +
+                "     gl_Position = transform * vec4(aPos, 1.0);\n" +
                 "     ourColor = aColor;\n" +
                 "     TexCoord = aTexCoord;\n" +
                 "}"
@@ -73,7 +75,7 @@ class Triangle(private val context: Context) {
                 "uniform sampler2D texture1;\n" +
                 "uniform sampler2D texture2;\n" +
                 "void main() {\n" +
-                "     FragColor = mix(texture(texture1, TexCoord), texture(texture2, TexCoord), 0.2);\n" +
+                "     FragColor = mix(texture(texture1, TexCoord), texture(texture2, TexCoord), 0.2) * vec4(ourColor, 1.0);\n" +
                 "}"
 
     private var mProgram: Int
@@ -127,6 +129,7 @@ class Triangle(private val context: Context) {
         GLES30.glTexParameteri(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MAG_FILTER, GLES30.GL_NEAREST)
 
         GLUtils.texImage2D(GLES30.GL_TEXTURE_2D, 0, bitmap0, 0)
+        GLES30.glGenerateMipmap(GLES30.GL_TEXTURE_2D)
 
         bitmap0.recycle()
 
@@ -142,6 +145,7 @@ class Triangle(private val context: Context) {
         GLES30.glTexParameteri(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MAG_FILTER, GLES30.GL_NEAREST)
 
         GLUtils.texImage2D(GLES30.GL_TEXTURE_2D, 0, bitmap1Flip, 0)
+        GLES30.glGenerateMipmap(GLES30.GL_TEXTURE_2D)
 
         bitmap1.recycle()
         bitmap1Flip.recycle()
@@ -155,10 +159,20 @@ class Triangle(private val context: Context) {
 
     fun draw() {
         GLES30.glUseProgram(mProgram)
+
+        val matrix4f = Matrix4f()
+        android.opengl.Matrix.scaleM(matrix4f.array,0,0.5f, 0.5f, 0.5f)
+        android.opengl.Matrix.translateM(matrix4f.array,0,0.5f, -0.5f, 0.0f)
+        android.opengl.Matrix.rotateM(matrix4f.array,0,((System.currentTimeMillis()/10)%360).toFloat(), 0.0f, 0.0f, 1.0f)
+
+        val transformLoc = GLES30.glGetUniformLocation(mProgram, "transform")
+        GLES30.glUniformMatrix4fv(transformLoc, 1, false, matrix4f.array, 0)
+
         GLES30.glActiveTexture(GLES30.GL_TEXTURE0)
         GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, textureIds[0])
         GLES30.glActiveTexture(GLES30.GL_TEXTURE1)
         GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, textureIds[1])
+
         GLES30.glBindVertexArray(vaoIds[0])
 
         GLES30.glDrawElements(GLES30.GL_TRIANGLES, 6, GLES30.GL_UNSIGNED_INT, 0)
