@@ -12,76 +12,105 @@ import androidx.annotation.RequiresApi
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
-import java.nio.IntBuffer
 
 @RequiresApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
-class Triangle(private val context: Context) {
+class Cube(private val context: Context) {
 
     var width: Int = 0
     var height: Int = 0
 
     private val vaoIds = IntArray(1)
     private val vboIds = IntArray(1)
-    private val eboIds = IntArray(1)
     private val textureIds = IntArray(2)
 
     private val vertices = floatArrayOf(
-            // positions          // colors           // texture coords
-            0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f,   // top right
-            0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f,   // bottom right
-            -0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f,   // bottom left
-            -0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f    // top left
+            -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+            0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+            0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+            0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+            -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+            -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+
+            -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+            0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+            0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+            0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+            -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
+            -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+
+            -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+            -0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+            -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+            -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+            -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+            -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+            0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+            0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+            0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+            0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+            0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+            0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+            -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+            0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
+            0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+            0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+            -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+            -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+
+            -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+            0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+            0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+            0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+            -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
+            -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
     )
 
-    private val indices = intArrayOf(
-            0, 1, 3,   // first triangle
-            1, 2, 3    // second triangle
+    private val cubePositions: List<Float> = listOf(
+         0.0f,  0.0f,  0.0f,
+         2.0f,  5.0f, -15.0f,
+        -1.5f, -2.2f, -2.5f,
+        -3.8f, -2.0f, -12.3f,
+         2.4f, -0.4f, -3.5f,
+        -1.7f,  3.0f, -7.5f,
+         1.3f, -2.0f, -2.5f,
+         1.5f,  2.0f, -2.5f,
+         1.5f,  0.2f, -1.5f,
+        -1.3f,  1.0f, -1.5f
     )
 
-    private var indicesBuffer: IntBuffer =
-            ByteBuffer.allocateDirect(indices.size * Int.SIZE_BYTES).run {
+    private var vertexBuffer: FloatBuffer =
+            ByteBuffer.allocateDirect(vertices.size * Float.SIZE_BYTES).run {
                 order(ByteOrder.nativeOrder())
-                asIntBuffer().apply {
-                    put(indices)
+                asFloatBuffer().apply {
+                    put(vertices)
                     position(0)
                 }
             }
 
-    private var vertexBuffer: FloatBuffer =
-        ByteBuffer.allocateDirect(vertices.size * Float.SIZE_BYTES).run {
-            order(ByteOrder.nativeOrder())
-            asFloatBuffer().apply {
-                put(vertices)
-                position(0)
-            }
-        }
-
     private val vertexShaderCode =
-        "#version 300 es\n" +
-                "layout (location = 0) in vec3 aPos;\n" +
-                "layout (location = 1) in vec3 aColor;\n" +
-                "layout (location = 2) in vec2 aTexCoord;\n" +
-                "out vec3 ourColor;\n"+
-                "out vec2 TexCoord;\n"+
-                "uniform mat4 model;\n"+
-                "uniform mat4 view;\n"+
-                "uniform mat4 projection;\n"+
-                "void main() {\n" +
-                "     gl_Position = projection * view * model * vec4(aPos, 1.0);\n" +
-                "     ourColor = aColor;\n" +
-                "     TexCoord = aTexCoord;\n" +
-                "}"
+            "#version 300 es\n" +
+                    "layout (location = 0) in vec3 aPos;\n" +
+                    "layout (location = 2) in vec2 aTexCoord;\n" +
+                    "out vec2 TexCoord;\n"+
+                    "uniform mat4 model;\n"+
+                    "uniform mat4 view;\n"+
+                    "uniform mat4 projection;\n"+
+                    "void main() {\n" +
+                    "     gl_Position = projection * view * model * vec4(aPos, 1.0);\n" +
+                    "     TexCoord = aTexCoord;\n" +
+                    "}"
     private val fragmentShaderCode =
-        "#version 300 es\n" +
-                "precision mediump float;\n" +
-                "out vec4 FragColor;\n"+
-                "in vec3 ourColor;\n" +
-                "in vec2 TexCoord;\n" +
-                "uniform sampler2D texture1;\n" +
-                "uniform sampler2D texture2;\n" +
-                "void main() {\n" +
-                "     FragColor = mix(texture(texture1, TexCoord), texture(texture2, TexCoord), 0.2) * vec4(ourColor, 1.0);\n" +
-                "}"
+            "#version 300 es\n" +
+                    "precision mediump float;\n" +
+                    "out vec4 FragColor;\n"+
+                    "in vec2 TexCoord;\n" +
+                    "uniform sampler2D texture1;\n" +
+                    "uniform sampler2D texture2;\n" +
+                    "void main() {\n" +
+                    "     FragColor = mix(texture(texture1, TexCoord), texture(texture2, TexCoord), 0.2);\n" +
+                    "}"
 
     private var mProgram: Int
 
@@ -109,19 +138,11 @@ class Triangle(private val context: Context) {
         GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, vboIds[0])
         GLES30.glBufferData(GLES30.GL_ARRAY_BUFFER, vertices.size * Float.SIZE_BYTES, vertexBuffer, GLES30.GL_STATIC_DRAW)
 
-        GLES30.glVertexAttribPointer(0, 3, GLES30.GL_FLOAT, false, 8 * Float.SIZE_BYTES, 0)
+        GLES30.glVertexAttribPointer(0, 3, GLES30.GL_FLOAT, false, 5 * Float.SIZE_BYTES, 0)
         GLES30.glEnableVertexAttribArray(0)
 
-        GLES30.glVertexAttribPointer(1, 3, GLES30.GL_FLOAT, false, 8 * Float.SIZE_BYTES, 3 * Float.SIZE_BYTES)
-        GLES30.glEnableVertexAttribArray(1)
-
-        GLES30.glVertexAttribPointer(2, 2, GLES30.GL_FLOAT, false, 8 * Float.SIZE_BYTES, 6 * Float.SIZE_BYTES)
+        GLES30.glVertexAttribPointer(2, 2, GLES30.GL_FLOAT, false, 5 * Float.SIZE_BYTES, 3 * Float.SIZE_BYTES)
         GLES30.glEnableVertexAttribArray(2)
-
-        //EBO
-        GLES30.glGenBuffers(1, eboIds, 0)
-        GLES30.glBindBuffer(GLES30.GL_ELEMENT_ARRAY_BUFFER, eboIds[0])
-        GLES30.glBufferData(GLES30.GL_ELEMENT_ARRAY_BUFFER, indices.size * Int.SIZE_BYTES, indicesBuffer, GLES30.GL_STATIC_DRAW)
 
         //Texture 0
         val bitmap0 = BitmapFactory.decodeResource(context.resources,R.drawable.container)
@@ -163,9 +184,6 @@ class Triangle(private val context: Context) {
     fun draw() {
         GLES30.glUseProgram(mProgram)
 
-        val modelMatrix4f = Matrix4f()
-        android.opengl.Matrix.rotateM(modelMatrix4f.array,0,-55.0f, 1.0f, 0.0f, 0.0f)
-
         val viewMatrix4f = Matrix4f()
         android.opengl.Matrix.translateM(viewMatrix4f.array,0,0.0f,0.0f,-3.0f)
 
@@ -173,9 +191,6 @@ class Triangle(private val context: Context) {
         if (height != 0 && width != 0) {
             android.opengl.Matrix.perspectiveM(projectionMatrix4f.array,0,45.0f, width.toFloat()/height.toFloat(), 0.1f, 100.0f)
         }
-
-        val model = GLES30.glGetUniformLocation(mProgram, "model")
-        GLES30.glUniformMatrix4fv(model, 1, false, modelMatrix4f.array, 0)
 
         val view = GLES30.glGetUniformLocation(mProgram, "view")
         GLES30.glUniformMatrix4fv(view, 1, false, viewMatrix4f.array, 0)
@@ -190,7 +205,17 @@ class Triangle(private val context: Context) {
 
         GLES30.glBindVertexArray(vaoIds[0])
 
-        GLES30.glDrawElements(GLES30.GL_TRIANGLES, 6, GLES30.GL_UNSIGNED_INT, 0)
+        for(i in 0..9)
+        {
+            val modelMatrix4f = Matrix4f()
+            android.opengl.Matrix.translateM(modelMatrix4f.array,0,cubePositions[3*i+0],cubePositions[3*i+1],cubePositions[3*i+2])
+            android.opengl.Matrix.rotateM(modelMatrix4f.array,0,20.0f * i, 1.0f, 0.3f, 0.5f)
+
+            val model = GLES30.glGetUniformLocation(mProgram, "model")
+            GLES30.glUniformMatrix4fv(model, 1, false, modelMatrix4f.array, 0)
+
+            GLES30.glDrawArrays(GLES30.GL_TRIANGLES, 0, 36)
+        }
 
         GLES30.glBindVertexArray(0)
     }
