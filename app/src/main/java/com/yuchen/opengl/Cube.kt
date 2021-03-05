@@ -12,6 +12,9 @@ import androidx.annotation.RequiresApi
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
+import kotlin.math.PI
+import kotlin.math.cos
+import kotlin.math.sin
 
 @RequiresApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
 class Cube(private val context: Context) {
@@ -184,12 +187,22 @@ class Cube(private val context: Context) {
     fun draw() {
         GLES30.glUseProgram(mProgram)
 
+        val radius = 10.0f
+        val camX = sin(System.currentTimeMillis()%4000/1000f*PI) * radius
+        val camZ = cos(System.currentTimeMillis()%4000/1000f*PI) * radius
+
         val viewMatrix4f = Matrix4f()
-        viewMatrix4f.loadTranslate(0.0f,0.0f,-3.0f)
+        android.opengl.Matrix.setLookAtM(
+            viewMatrix4f.array,
+            0,
+            camX.toFloat(), 0.0f, camZ.toFloat(),
+            0.0f, 0.0f, 0.0f,
+            0.0f, 1.0f, 0.0f
+        )
 
         val projectionMatrix4f = Matrix4f()
         if (height != 0 && width != 0) {
-            projectionMatrix4f.loadPerspective(45.0f, width.toFloat()/height.toFloat(), 0.1f, 100.0f)
+            android.opengl.Matrix.perspectiveM(projectionMatrix4f.array, 0, 45.0f, width.toFloat()/height.toFloat(), 0.1f, 100.0f)
         }
 
         val view = GLES30.glGetUniformLocation(mProgram, "view")
@@ -208,8 +221,8 @@ class Cube(private val context: Context) {
         for(i in 0..9)
         {
             val modelMatrix4f = Matrix4f()
-            modelMatrix4f.translate(cubePositions[3*i+0],cubePositions[3*i+1],cubePositions[3*i+2])
-            modelMatrix4f.rotate(20.0f * i, 1.0f, 0.3f, 0.5f)
+            android.opengl.Matrix.translateM(modelMatrix4f.array,0,cubePositions[3*i+0],cubePositions[3*i+1],cubePositions[3*i+2])
+            android.opengl.Matrix.rotateM(modelMatrix4f.array,0,20.0f * i, 1.0f, 0.3f, 0.5f)
 
             val model = GLES30.glGetUniformLocation(mProgram, "model")
             GLES30.glUniformMatrix4fv(model, 1, false, modelMatrix4f.array, 0)
